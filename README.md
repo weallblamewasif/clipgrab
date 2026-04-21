@@ -20,18 +20,29 @@ A sleek, modern web app to download YouTube videos — full or clipped to a spec
 
 ## 🚀 Quick Start
 
-### Local Setup
+### 🪄 The Easiest Way (Windows)
+
+No installation required! Just double-click the **`Start_ClipGrab.bat`** file. 
+It will automatically download a portable version of Node.js (if you don't have it), install all requirements, and open the app in your browser!
+
+### 💻 Manual Setup (Mac / Linux / Windows)
+
+**Prerequisite:** You must have [Node.js](https://nodejs.org/) installed before running these commands. If you get an `'npm' is not recognized` error, it means you need to install Node.js first.
 
 ```bash
 git clone https://github.com/weallblamewasif/clipgrab.git
 cd clipgrab
 npm install
+node server.js
 ```
-when you click Start_ClipGrab.bat in the clipgrab folder once its cloned in your system it will automatically open in your browser and ready to use.Wait for it to download once you pasted a yt link then a popup will pop, just save the file wherever you want in your system
+
+Open **http://localhost:3000** in your browser.
 
 > **Note:** During `npm install`, the app will automatically download the correct `yt-dlp` and `ffmpeg` binaries for your OS. No external installations required! 🎉
 
-### Docker
+### 🐳 Docker
+
+**Prerequisite:** You must have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running. If you get a `'docker' is not recognized` error, it means you need to install Docker first.
 
 ```bash
 docker build -t clipgrab .
@@ -45,6 +56,19 @@ docker run -p 3000:3000 clipgrab
 - **Video Processing:** yt-dlp + FFmpeg
 - **Font:** Inter (Google Fonts)
 
+## 📁 Project Structure
+
+```
+clipgrab/
+├── server.js          # Express API server
+├── Dockerfile         # Docker deployment config
+├── package.json
+├── public/
+│   ├── index.html     # Main page
+│   ├── style.css      # Dark glassmorphism theme
+│   └── script.js      # Frontend logic
+└── temp/              # Temporary download files (auto-cleaned)
+```
 
 ## 📝 API Endpoints
 
