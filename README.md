@@ -27,7 +27,7 @@ git clone https://github.com/weallblamewasif/clipgrab.git
 cd clipgrab
 npm install
 ```
-it will automatically open in your browser and ready to use
+when you click Start_ClipGrab.bat it will automatically open in your browser and ready to use
 
 > **Note:** During `npm install`, the app will automatically download the correct `yt-dlp` and `ffmpeg` binaries for your OS. No external installations required! 🎉
 
