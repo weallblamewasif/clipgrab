@@ -1,24 +1,24 @@
-# 🎬 ClipGrab
+#  ClipGrab
 
 A sleek, modern web app to download YouTube videos — full or clipped to a specific section.
 
 ![ClipGrab UI](https://img.shields.io/badge/Stack-Node.js%20%2B%20Express-green?style=flat-square) ![yt-dlp](https://img.shields.io/badge/Powered%20by-yt--dlp-red?style=flat-square) ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-## ✨ Features
+##  Features
 
-- 🎥 **Full Video Download** — grab the entire video as MP4
-- ✂️ **Section Download** — clip a specific time range (start → end)
-- 🔍 **Video Preview** — fetches title, thumbnail & duration before downloading
-- 🌙 **Dark Glassmorphism UI** — animated backgrounds, smooth transitions
-- 🐳 **Docker Ready** — deploy anywhere with one command
+-  **Full Video Download** — grab the entire video as MP4
+-  **Section Download** — clip a specific time range (start → end)
+-  **Video Preview** — fetches title, thumbnail & duration before downloading
+-  **Dark Glassmorphism UI** — animated backgrounds, smooth transitions
+-  **Docker Ready** — deploy anywhere with one command
 
-## 🖼️ Preview
+##  Preview
 
 | Full Video Mode | Section Mode |
 |:-:|:-:|
 | Paste URL → Download entire video | Set start/end times → Download clip |
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Local Setup
 
@@ -29,7 +29,7 @@ npm install
 ```
 just click on Start_ClipGrab.bat it will open in your browser and ready to use
 
-> **Note:** During `npm install`, the app will automatically download the correct `yt-dlp` and `ffmpeg` binaries for your OS. No external installations required! 🎉
+> **Note:** During `npm install`, the app will automatically download the correct `yt-dlp` and `ffmpeg` binaries for your OS. No external installations required! 
 
 ### Docker
 
