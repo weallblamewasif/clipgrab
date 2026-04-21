@@ -26,10 +26,8 @@ A sleek, modern web app to download YouTube videos — full or clipped to a spec
 git clone https://github.com/weallblamewasif/clipgrab.git
 cd clipgrab
 npm install
-node server.js
 ```
-
-Open **http://localhost:3000** in your browser.
+just click on Start_ClipGrab.bat it will open in your browser and ready to use
 
 > **Note:** During `npm install`, the app will automatically download the correct `yt-dlp` and `ffmpeg` binaries for your OS. No external installations required! 🎉
 
