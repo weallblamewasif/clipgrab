@@ -23,7 +23,7 @@ A sleek, modern web app to download YouTube videos — full or clipped to a spec
 ### Local Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/clipgrab.git
+git clone https://github.com/weallblamewasif/clipgrab.git
 cd clipgrab
 npm install
 node server.js
