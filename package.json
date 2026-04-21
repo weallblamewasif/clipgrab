@@ -1,0 +1,17 @@
+{
+  "name": "clipgrab",
+  "version": "1.0.0",
+  "description": "YouTube video downloader web app powered by yt-dlp",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "postinstall": "node setup.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "ffmpeg-static": "^5.2.0",
+    "uuid": "^9.0.0"
+  }
+}

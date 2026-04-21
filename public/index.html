@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClipGrab — YouTube Video Downloader</title>
+  <meta name="description" content="Download YouTube videos or specific sections instantly with ClipGrab." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Animated background orbs -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect rx="12" width="48" height="48" fill="url(#g1)"/>
+          <path d="M19 15v18l15-9-15-9z" fill="#fff"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#a855f7"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+        </svg>
+        <h1>ClipGrab</h1>
+      </div>
+      <p class="tagline">Download YouTube videos instantly — full or clipped.</p>
+    </header>
+
+    <!-- Main Card -->
+    <main class="card" id="mainCard">
+      <!-- URL Input -->
+      <div class="input-group">
+        <label for="urlInput">YouTube URL</label>
+        <div class="url-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          <input type="url" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+          <button id="fetchBtn" class="fetch-btn" title="Fetch info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Video Preview (hidden by default) -->
+      <div class="preview" id="preview" style="display:none;">
+        <img id="previewThumb" src="" alt="Video thumbnail" />
+        <div class="preview-info">
+          <h3 id="previewTitle">Video Title</h3>
+          <span class="preview-meta">
+            <span id="previewChannel">Channel</span> · <span id="previewDuration">0:00</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Download Mode Toggle -->
+      <div class="mode-section">
+        <label class="mode-label">Download Mode</label>
+        <div class="mode-toggle" id="modeToggle">
+          <button class="mode-btn active" data-mode="full" id="btnFull">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><polygon points="10,8 16,12 10,16"/></svg>
+            Full Video
+          </button>
+          <button class="mode-btn" data-mode="section" id="btnSection">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Section
+          </button>
+          <div class="mode-slider" id="modeSlider"></div>
+        </div>
+      </div>
+
+      <!-- Time Range (hidden by default) -->
+      <div class="time-range" id="timeRange" style="display:none;">
+        <div class="time-field">
+          <label for="startTime">Start Time</label>
+          <input type="text" id="startTime" placeholder="00:00:00" maxlength="8" value="00:00:00" />
+        </div>
+        <span class="time-separator">→</span>
+        <div class="time-field">
+          <label for="endTime">End Time</label>
+          <input type="text" id="endTime" placeholder="00:03:00" maxlength="8" value="00:03:00" />
+        </div>
+      </div>
+
+      <!-- Download Button -->
+      <button class="download-btn" id="downloadBtn" disabled>
+        <span class="btn-content" id="btnContent">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </span>
+        <span class="btn-loading" id="btnLoading" style="display:none;">
+          <div class="spinner"></div>
+          Downloading...
+        </span>
+      </button>
+
+      <!-- Status message -->
+      <div class="status" id="status"></div>
+    </main>
+
+    <footer class="footer">
+      <p>Powered by <strong>yt-dlp</strong> · Built locally</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
