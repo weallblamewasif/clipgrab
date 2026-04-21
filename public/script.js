@@ -10,8 +10,6 @@ const btnFull     = document.getElementById("btnFull");
 const btnSection  = document.getElementById("btnSection");
 const modeSlider  = document.getElementById("modeSlider");
 const timeRange   = document.getElementById("timeRange");
-const startTime   = document.getElementById("startTime");
-const endTime     = document.getElementById("endTime");
 const downloadBtn = document.getElementById("downloadBtn");
 const btnContent  = document.getElementById("btnContent");
 const btnLoading  = document.getElementById("btnLoading");
@@ -33,7 +31,6 @@ function setMode(mode) {
   if (mode === "section") {
     modeSlider.classList.add("right");
     timeRange.style.display = "flex";
-    // Smooth entry
     timeRange.style.animation = "none";
     timeRange.offsetHeight; // trigger reflow
     timeRange.style.animation = "fadeUp 0.3s ease-out";
@@ -44,20 +41,16 @@ function setMode(mode) {
 }
 
 // ─── Time input formatting ─────────────────────────
-function formatTimeInput(e) {
-  let val = e.target.value.replace(/[^0-9:]/g, "");
-  // Auto-insert colons
-  const digits = val.replace(/:/g, "");
-  if (digits.length >= 4) {
-    val = digits.slice(0, 2) + ":" + digits.slice(2, 4) + ":" + digits.slice(4, 6);
-  } else if (digits.length >= 2) {
-    val = digits.slice(0, 2) + ":" + digits.slice(2);
-  }
-  e.target.value = val;
-}
-
-startTime.addEventListener("input", formatTimeInput);
-endTime.addEventListener("input", formatTimeInput);
+// Pad numbers with leading zero when leaving focus
+document.querySelectorAll('.time-split-group input').forEach(input => {
+  input.addEventListener('blur', (e) => {
+    let val = parseInt(e.target.value) || 0;
+    let max = parseInt(e.target.getAttribute('max')) || 59;
+    if (val > max) val = max;
+    if (val < 0) val = 0;
+    e.target.value = val.toString().padStart(2, "0");
+  });
+});
 
 // ─── URL validation ────────────────────────────────
 function isValidYTUrl(url) {
@@ -79,7 +72,6 @@ urlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchInfo();
 });
 
-// Also try fetch on paste
 urlInput.addEventListener("paste", () => {
   setTimeout(fetchInfo, 100);
 });
@@ -124,6 +116,30 @@ async function fetchInfo() {
 // ─── Download ──────────────────────────────────────
 downloadBtn.addEventListener("click", startDownload);
 
+function getFormatTime(idPrefix) {
+  const h = document.getElementById(idPrefix + 'H').value.padStart(2, '0');
+  const m = document.getElementById(idPrefix + 'M').value.padStart(2, '0');
+  const s = document.getElementById(idPrefix + 'S').value.padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+const resetBtn    = document.getElementById("resetBtn");
+const progressBox = document.getElementById("progressBox");
+const progressText = document.getElementById("progressText");
+const progressPercent = document.getElementById("progressPercent");
+const progressFill = document.getElementById("progressFill");
+
+// ─── Download Again Reset ──────────────────────────
+resetBtn.addEventListener("click", () => {
+  urlInput.value = "";
+  preview.style.display = "none";
+  resetBtn.style.display = "none";
+  downloadBtn.style.display = "block";
+  downloadBtn.disabled = true;
+  videoInfoLoaded = false;
+  showStatus("", "");
+});
+
 async function startDownload() {
   const url = urlInput.value.trim();
   if (!url) return;
@@ -131,24 +147,20 @@ async function startDownload() {
   const body = { url, mode: currentMode };
 
   if (currentMode === "section") {
-    body.startTime = startTime.value.trim() || "00:00:00";
-    body.endTime = endTime.value.trim() || "00:03:00";
-
-    // Simple validation
-    if (!/^\d{2}:\d{2}:\d{2}$/.test(body.startTime) || !/^\d{2}:\d{2}:\d{2}$/.test(body.endTime)) {
-      showStatus("Please use HH:MM:SS format for times.", "error");
-      return;
-    }
+    body.startTime = getFormatTime("start");
+    body.endTime = getFormatTime("end");
   }
 
-  // UI → loading state
-  btnContent.style.display = "none";
-  btnLoading.style.display = "flex";
-  downloadBtn.disabled = true;
-  showStatus("Downloading... this may take a minute.", "info");
+  // UI → start preparing
+  downloadBtn.style.display = "none";
+  progressBox.style.display = "block";
+  progressFill.style.width = "0%";
+  progressPercent.textContent = "0%";
+  progressText.textContent = "Initializing...";
+  showStatus("", "");
 
   try {
-    const res = await fetch("/api/download", {
+    const res = await fetch("/api/prepare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -156,35 +168,55 @@ async function startDownload() {
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || "Download failed");
+      throw new Error(err.error || "Preparation failed");
     }
 
-    // Get the blob and trigger download
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    const { id } = await res.json();
+    
+    // Connect to SSE for progress
+    const evtSource = new EventSource(`/api/progress/${id}`);
+    
+    evtSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      progressFill.style.width = `${data.progress}%`;
+      progressPercent.textContent = `${data.progress}%`;
+      progressText.textContent = data.text;
 
-    // filename from header or default
-    const cd = res.headers.get("Content-Disposition");
-    let filename = "clipgrab_video.mp4";
-    if (cd) {
-      const m = cd.match(/filename="?([^"]+)"?/);
-      if (m) filename = m[1];
-    }
+      if (data.status === "error") {
+        evtSource.close();
+        progressBox.style.display = "none";
+        downloadBtn.style.display = "block";
+        showStatus(data.error || "Download failed", "error");
+      }
 
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
+      if (data.status === "done") {
+        evtSource.close();
+        progressBox.style.display = "none";
+        resetBtn.style.display = "block";
+        showStatus("✓ Download complete!", "success");
+        
+        // Trigger file download
+        const a = document.createElement("a");
+        a.href = `/api/file/${id}`;
+        a.download = "clipgrab_video.mp4";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    };
 
-    showStatus("✓ Download complete!", "success");
+    evtSource.onerror = () => {
+      evtSource.close();
+      progressBox.style.display = "none";
+      downloadBtn.style.display = "block";
+      showStatus("Connection to server lost.", "error");
+    };
+
   } catch (err) {
+    progressBox.style.display = "none";
+    downloadBtn.style.display = "block";
     showStatus(err.message, "error");
-  } finally {
-    btnContent.style.display = "flex";
-    btnLoading.style.display = "none";
-    downloadBtn.disabled = false;
   }
 }
 

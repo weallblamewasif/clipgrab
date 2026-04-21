@@ -57,15 +57,26 @@ app.post("/api/info", (req, res) => {
   );
 });
 
-// ─── Download video ─────────────────────────────────────────────────
-app.post("/api/download", (req, res) => {
+// ─── Download Management ──────────────────────────────────────────────
+const downloads = {};
+
+app.post("/api/prepare", (req, res) => {
   const { url, mode, startTime, endTime } = req.body;
   if (!url) return res.status(400).json({ error: "URL is required" });
 
-  const fileId = uuidv4();
-  const outputTemplate = path.join(TEMP_DIR, `${fileId}.%(ext)s`);
+  const id = uuidv4();
+  
+  // Calculate duration for section mode to track ffmpeg percentage
+  let duration = 0;
+  if (mode === "section" && startTime && endTime) {
+    const sPts = startTime.split(':').reduce((acc, time) => (60 * acc) + +time);
+    const ePts = endTime.split(':').reduce((acc, time) => (60 * acc) + +time);
+    duration = ePts - sPts;
+  }
 
-  // Build yt-dlp args
+  downloads[id] = { status: "starting", progress: 0, text: "Initializing...", file: null, error: null, duration };
+
+  const outputTemplate = path.join(TEMP_DIR, `${id}.%(ext)s`);
   const args = [];
 
   if (mode === "section" && startTime && endTime) {
@@ -74,69 +85,132 @@ app.post("/api/download", (req, res) => {
     args.push("--postprocessor-args", "ffmpeg:-vf setpts=PTS-STARTPTS -af asetpts=PTS-STARTPTS");
   }
 
-  args.push(
-    "-f", "bv*[ext=mp4]+ba[ext=m4a]/mp4",
-    "--merge-output-format", "mp4",
-    "--recode-video", "mp4",
-    "--no-playlist",
-    "--no-warnings",
-    "-o", outputTemplate,
-    url
-  );
-
-  console.log(`\n⬇  Starting download [${mode}]`);
-  console.log(`   Command: yt-dlp ${args.join(" ")}\n`);
+  // -N 4 uses 4 concurrent connections to significantly speed up downloading!
+  args.push("-N", "4", "-f", "bv*[ext=mp4]+ba[ext=m4a]/mp4", "--merge-output-format", "mp4", "--recode-video", "mp4", "--no-playlist", "--no-warnings", "--no-colors", "--newline", "-o", outputTemplate, url);
 
   const envPath = isWindows ? FFMPEG_DIR + ";" + process.env.PATH : process.env.PATH;
+  const child = spawn(YT_DLP, args, { env: { ...process.env, PATH: envPath } });
 
-  const child = spawn(YT_DLP, args, {
-    env: { ...process.env, PATH: envPath },
+  // Helper to parse line string
+  const parseLine = (dataStr) => {
+    // 1. Check for standard yt-dlp percent
+    const ytMatch = dataStr.match(/([\d\.]+)%/);
+    if (ytMatch && !dataStr.includes("time=")) {
+      const p = parseFloat(ytMatch[1]);
+      downloads[id].progress = p;
+      if (dataStr.includes("Destination") && dataStr.includes(".m4a")) {
+        downloads[id].text = `Downloading Audio: ${p}%`;
+      } else if (dataStr.includes("Destination") && dataStr.includes(".mp4")) {
+        downloads[id].text = `Downloading Video: ${p}%`;
+      } else if (downloads[id].text === "Initializing...") {
+        downloads[id].text = `Downloading Stream: ${p}%`;
+      } else {
+        downloads[id].text = downloads[id].text.replace(/[\d\.]+%\s*$/g, '') + ` ${p}%`;
+      }
+      return;
+    }
+
+    // 2. Check for ffmpeg Section Clipping progress
+    if (downloads[id].duration > 0) {
+      const ffmpegMatch = dataStr.match(/time=(\d+):(\d+):(\d+\.\d+)/);
+      if (ffmpegMatch) {
+        const h = parseInt(ffmpegMatch[1]);
+        const m = parseInt(ffmpegMatch[2]);
+        const s = parseFloat(ffmpegMatch[3]);
+        const totalSecs = (h * 3600) + (m * 60) + s;
+        
+        const p = Math.min(100, Math.floor((totalSecs / downloads[id].duration) * 100));
+        downloads[id].progress = p;
+        downloads[id].text = `Clipping Section: ${p}%`;
+        return;
+      }
+    }
+
+    // 3. Fallbacks
+    if (dataStr.includes("Destination")) {
+      downloads[id].text = "Connecting to media stream...";
+    } else if (dataStr.includes("Merger")) {
+      downloads[id].text = "Merging video and audio... (Processing)";
+    }
+  };
+
+  child.stdout.on("data", (data) => {
+    const output = data.toString().replace(/\x1b\[[0-9;]*m/g, '');
+    parseLine(output);
   });
 
   let stderrData = "";
-
-  child.stdout.on("data", (d) => process.stdout.write(d));
-  child.stderr.on("data", (d) => {
-    stderrData += d.toString();
-    process.stderr.write(d);
+  child.stderr.on("data", (data) => { 
+    const output = data.toString().replace(/\x1b\[[0-9;]*m/g, '');
+    stderrData += output; 
+    parseLine(output); // ffmpeg pushes natively to stderr!
   });
 
   child.on("close", (code) => {
     if (code !== 0) {
-      console.error("yt-dlp exited with code", code);
-      return res.status(500).json({ error: "Download failed. " + (stderrData || "") });
+      downloads[id].status = "error";
+      downloads[id].error = stderrData || "Unknown error occurred";
+      return;
     }
 
-    // Find the output file
-    const files = fs.readdirSync(TEMP_DIR).filter((f) => f.startsWith(fileId));
-    if (files.length === 0) {
-      return res.status(500).json({ error: "No output file found." });
+    const files = fs.readdirSync(TEMP_DIR).filter((f) => f.startsWith(id));
+    if (files.length > 0) {
+      downloads[id].file = path.join(TEMP_DIR, files[0]);
+      downloads[id].status = "done";
+      downloads[id].progress = 100;
+      downloads[id].text = "Complete!";
+    } else {
+      downloads[id].status = "error";
+      downloads[id].error = "Output file not found";
     }
-
-    const filePath = path.join(TEMP_DIR, files[0]);
-
-    // Stream the file back
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader("Content-Disposition", `attachment; filename="clipgrab_video.mp4"`);
-
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
-    stream.on("end", () => {
-      try { fs.unlinkSync(filePath); } catch (_) {}
-    });
-    stream.on("error", (e) => {
-      console.error("Stream error:", e);
-      res.status(500).end();
-    });
   });
 
-  child.on("error", (err) => {
-    console.error("Spawn error:", err);
-    res.status(500).json({ error: "Failed to start yt-dlp." });
+  res.json({ id });
+});
+
+app.get("/api/progress/:id", (req, res) => {
+  const id = req.params.id;
+  if (!downloads[id]) return res.status(404).end();
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  const interval = setInterval(() => {
+    if (!downloads[id]) return clearInterval(interval);
+    
+    res.write(`data: ${JSON.stringify(downloads[id])}\n\n`);
+    
+    if (downloads[id].status === "done" || downloads[id].status === "error") {
+      clearInterval(interval);
+      res.end();
+    }
+  }, 500);
+
+  req.on("close", () => clearInterval(interval));
+});
+
+app.get("/api/file/:id", (req, res) => {
+  const id = req.params.id;
+  if (!downloads[id] || !downloads[id].file) return res.status(404).send("File not found");
+
+  const filePath = downloads[id].file;
+  res.setHeader("Content-Type", "video/mp4");
+  res.setHeader("Content-Disposition", `attachment; filename="clipgrab_video.mp4"`);
+
+  const stream = fs.createReadStream(filePath);
+  stream.pipe(res);
+  stream.on("end", () => {
+    try { fs.unlinkSync(filePath); } catch (_) {}
+    delete downloads[id]; // Cleanup
   });
 });
 
 // ─── Start ──────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🎬 ClipGrab is running at http://localhost:${PORT}\n`);
+  
+  // Automatically open the user's browser to the correct page
+  const startCmd = isWindows ? "start" : (os.platform() === 'darwin' ? "open" : "xdg-open");
+  require('child_process').exec(`${startCmd} http://localhost:${PORT}`);
 });

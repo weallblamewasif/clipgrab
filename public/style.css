@@ -343,25 +343,46 @@ body {
   flex: 1;
 }
 
-.time-field input {
-  width: 100%;
+.time-split-group {
+  display: flex;
+  align-items: center;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.time-split-group:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.12);
+}
+
+.time-split-group input {
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: none;
   color: var(--text);
   font-family: "Inter", monospace;
   font-size: 1rem;
   font-weight: 600;
-  padding: 12px 14px;
   text-align: center;
   outline: none;
-  letter-spacing: 0.05em;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  -moz-appearance: textfield;
 }
 
-.time-field input:focus {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.12);
+/* Hide native number spin buttons */
+.time-split-group input::-webkit-outer-spin-button,
+.time-split-group input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.colon {
+  color: var(--text-muted);
+  font-weight: 700;
+  margin: 0 2px;
 }
 
 .time-separator {
@@ -372,6 +393,11 @@ body {
 }
 
 /* ─── Download Button ─────────────────────────── */
+.action-row {
+  position: relative;
+  width: 100%;
+}
+
 .download-btn {
   width: 100%;
   padding: 16px;
@@ -389,7 +415,19 @@ body {
   box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3);
 }
 
-.download-btn:hover:not(:disabled) {
+.download-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  border: 1px solid var(--border);
+  margin-top: 12px;
+}
+
+.download-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.download-btn:hover:not(:disabled):not(.secondary) {
   transform: translateY(-2px);
   box-shadow: 0 6px 28px rgba(168, 85, 247, 0.45);
 }
@@ -401,19 +439,7 @@ body {
 .download-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.download-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s;
-}
-
-.download-btn:hover:not(:disabled)::before {
-  transform: translateX(100%);
+  box-shadow: none;
 }
 
 .btn-content, .btn-loading {
@@ -433,6 +459,48 @@ body {
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+}
+
+/* ─── Progress Bar ────────────────────────────── */
+.progress-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.3s ease-out;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+#progressPercent {
+  color: var(--accent-2);
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gradient);
+  border-radius: 4px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
 }
 
 /* ─── Status ──────────────────────────────────── */

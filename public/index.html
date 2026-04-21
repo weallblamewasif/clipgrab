@@ -76,27 +76,59 @@
       <!-- Time Range (hidden by default) -->
       <div class="time-range" id="timeRange" style="display:none;">
         <div class="time-field">
-          <label for="startTime">Start Time</label>
-          <input type="text" id="startTime" placeholder="00:00:00" maxlength="8" value="00:00:00" />
+          <label>Start Time</label>
+          <div class="time-split-group">
+            <input type="number" id="startH" min="0" max="99" value="00" onclick="this.select()" />
+            <span class="colon">:</span>
+            <input type="number" id="startM" min="0" max="59" value="00" onclick="this.select()" />
+            <span class="colon">:</span>
+            <input type="number" id="startS" min="0" max="59" value="00" onclick="this.select()" />
+          </div>
         </div>
         <span class="time-separator">→</span>
         <div class="time-field">
-          <label for="endTime">End Time</label>
-          <input type="text" id="endTime" placeholder="00:03:00" maxlength="8" value="00:03:00" />
+          <label>End Time</label>
+          <div class="time-split-group">
+            <input type="number" id="endH" min="0" max="99" value="00" onclick="this.select()" />
+            <span class="colon">:</span>
+            <input type="number" id="endM" min="0" max="59" value="00" onclick="this.select()" />
+            <span class="colon">:</span>
+            <input type="number" id="endS" min="0" max="59" value="00" onclick="this.select()" />
+          </div>
         </div>
       </div>
 
-      <!-- Download Button -->
-      <button class="download-btn" id="downloadBtn" disabled>
-        <span class="btn-content" id="btnContent">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
-        </span>
-        <span class="btn-loading" id="btnLoading" style="display:none;">
-          <div class="spinner"></div>
-          Downloading...
-        </span>
-      </button>
+      <!-- Progress Box (hidden by default) -->
+      <div class="progress-box" id="progressBox" style="display:none;">
+        <div class="progress-labels">
+          <span id="progressText">Initializing...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-row">
+        <!-- Download Button -->
+        <button class="download-btn" id="downloadBtn" disabled>
+          <span class="btn-content" id="btnContent">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </span>
+          <span class="btn-loading" id="btnLoading" style="display:none;">
+            <div class="spinner"></div>
+            Connecting...
+          </span>
+        </button>
+
+        <!-- Download Again Button (hidden by default) -->
+        <button class="download-btn secondary" id="resetBtn" style="display:none;">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Download Another
+        </button>
+      </div>
 
       <!-- Status message -->
       <div class="status" id="status"></div>
